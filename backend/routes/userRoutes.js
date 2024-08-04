@@ -27,7 +27,7 @@ const upload = multer({ storage });
 // @access  Public
 router.post('/', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'file', maxCount: 1 }]), async (req, res) => {
     try {
-        const { name, email } = req.body;
+        const { name, email, address, phone, dateOfBirth } = req.body;
 
         if (!req.files['photo'] || !req.files['file']) {
             return res.status(400).json({ message: 'Photo and file are required' });
@@ -39,6 +39,9 @@ router.post('/', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'file', 
         const newUser = new User({
             name,
             email,
+            address,
+            phone,
+            dateOfBirth,
             photo: `uploads/${photo}`,
             file: `uploads/${file}`
         });
@@ -63,5 +66,26 @@ router.get('/', async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
+
+// @route   GET /api/users/search
+// @desc    Search users by name or email
+// @access  Public
+router.get('/search', async (req, res) => {
+    try {
+        const { query } = req.query;
+        const users = await User.find({
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { email: { $regex: query, $options: 'i' } }
+            ]
+        });
+        res.json(users);
+    } catch (error) {
+        console.error('Server error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+
 
 module.exports = router;
